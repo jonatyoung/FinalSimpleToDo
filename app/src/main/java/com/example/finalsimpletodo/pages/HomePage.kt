@@ -109,7 +109,43 @@ fun HomePage(
         }
 
         if (showAddDialog) {
-            // ... (add todo dialog code)
+            AlertDialog(
+                onDismissRequest = {
+                    showAddDialog = false
+                    todoTitle = ""
+                },
+                title = { Text("Add Todo") },
+                text = {
+                    TextField(
+                        value = todoTitle,
+                        onValueChange = { todoTitle = it },
+                        label = { Text("Todo Title") }
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (todoTitle.isNotEmpty()) {
+                                todoViewModel.addTodo(todoTitle)
+                                showAddDialog = false
+                                todoTitle = ""
+                            }
+                        }
+                    ) {
+                        Text("Add")
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showAddDialog = false
+                            todoTitle = ""
+                        }
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
 
         if (showUpdateDialog) {
