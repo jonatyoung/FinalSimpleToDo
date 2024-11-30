@@ -51,6 +51,14 @@ class TodoViewModel : ViewModel() {
         }
     }
 
+    fun updateTodo(todoId: String, newTitle: String) {
+        viewModelScope.launch {
+            db.collection("todos")
+                .document(todoId)
+                .update("title", newTitle)
+        }
+    }
+
     fun toggleTodoComplete(todoId: String, isComplete: Boolean) {
         viewModelScope.launch {
             db.collection("todos")

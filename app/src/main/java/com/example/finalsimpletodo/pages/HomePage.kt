@@ -27,7 +27,9 @@ fun HomePage(
     todoViewModel: TodoViewModel = viewModel()
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
     var todoTitle by remember { mutableStateOf("") }
+    var updatingTodo: TodoItem? by remember { mutableStateOf(null) }
 
     val todos by todoViewModel.todos.collectAsState()
     val authState by authViewModel.authState.observeAsState()
@@ -59,10 +61,26 @@ fun HomePage(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Add, "Add Todo")
+                FloatingActionButton(
+                    onClick = { showAddDialog = true }
+                ) {
+                    Icon(Icons.Default.Add, "Add Todo")
+                }
+                if (updatingTodo != null) {
+                    FloatingActionButton(
+                        onClick = {
+                            showUpdateDialog = true
+                            todoTitle = updatingTodo?.title ?: ""
+                        }
+                    ) {
+                        Icon(Icons.Default.Edit, "Update Todo")
+                    }
+                }
             }
         }
     ) { paddingValues ->
@@ -80,18 +98,28 @@ fun HomePage(
                 TodoItemCard(
                     todo = todo,
                     onToggleComplete = { todoViewModel.toggleTodoComplete(todo.id, it) },
-                    onDelete = { todoViewModel.deleteTodo(todo.id) }
+                    onDelete = { todoViewModel.deleteTodo(todo.id) },
+                    onUpdate = {
+                        updatingTodo = todo
+                        todoTitle = todo.title
+                        showUpdateDialog = true
+                    }
                 )
             }
         }
 
         if (showAddDialog) {
+            // ... (add todo dialog code)
+        }
+
+        if (showUpdateDialog) {
             AlertDialog(
                 onDismissRequest = {
-                    showAddDialog = false
+                    showUpdateDialog = false
                     todoTitle = ""
+                    updatingTodo = null
                 },
-                title = { Text("Add New Todo") },
+                title = { Text("Update Todo") },
                 text = {
                     TextField(
                         value = todoTitle,
@@ -102,21 +130,23 @@ fun HomePage(
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            if (todoTitle.isNotEmpty()) {
-                                todoViewModel.addTodo(todoTitle)
-                                showAddDialog = false
+                            if (todoTitle.isNotEmpty() && updatingTodo != null) {
+                                todoViewModel.updateTodo(updatingTodo!!.id, todoTitle)
+                                showUpdateDialog = false
                                 todoTitle = ""
+                                updatingTodo = null
                             }
                         }
                     ) {
-                        Text("Add")
+                        Text("Update")
                     }
                 },
                 dismissButton = {
                     TextButton(
                         onClick = {
-                            showAddDialog = false
+                            showUpdateDialog = false
                             todoTitle = ""
+                            updatingTodo = null
                         }
                     ) {
                         Text("Cancel")
@@ -131,7 +161,8 @@ fun HomePage(
 private fun TodoItemCard(
     todo: TodoItem,
     onToggleComplete: (Boolean) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onUpdate: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -156,8 +187,13 @@ private fun TodoItemCard(
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, "Delete Todo")
+            Row {
+                IconButton(onClick = onUpdate) {
+                    Icon(Icons.Default.Edit, "Update Todo")
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, "Delete Todo")
+                }
             }
         }
     }
